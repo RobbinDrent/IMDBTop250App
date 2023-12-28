@@ -67,19 +67,18 @@ public class Imdb250Service {
     }
 
     private String findDirectorUrl(final String url) {
-        String directorUrl= "banaan";
-
+        String director = "";
 
         try {
             var document = Jsoup.connect(url).get();
 //            var selectedElement = document.select(".ipc-metadata-list-item__list-content-item.ipc-metadata-list-item__list-content-item--link");
-            directorUrl = document.select(".ipc-metadata-list-item__list-content-item.ipc-metadata-list-item__list-content-item--link").get(0).text();
+            director = document.select(Config.CAST_TAG).get(0).text();
 
 //            directorUrl = selectedElement.attr("href");
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return directorUrl;
+        return director;
     }
 
     /**

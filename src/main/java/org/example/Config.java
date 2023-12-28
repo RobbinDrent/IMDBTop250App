@@ -19,4 +19,5 @@ public class Config {
     public static final String METADATA_TAG = ".sc-43986a27-7.dBkaPT.cli-title-metadata > span";
     public static final String IMDB_BASE_URL = "https://www.imdb.com";
     public static final String URL_WRAPPER_TAG = ".ipc-title-link-wrapper";
+    public static final String CAST_TAG = ".ipc-metadata-list-item__list-content-item.ipc-metadata-list-item__list-content-item--link";
 }
