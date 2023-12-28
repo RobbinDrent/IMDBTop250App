@@ -1,25 +1,19 @@
 package org.example;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.*;
 
-
+@Slf4j
 public class Imdb250Service {
+    private static final String INVALID_TIME_NOTATION = "Ongeldige tijdnotatie: ";
+
     @Getter
     private Map<Integer, Film> filmInTop250;
-
     @Getter
     private List<Film> films;
 
@@ -29,43 +23,86 @@ public class Imdb250Service {
         loadImdbTop250();
     }
 
-
+    /**
+     * Laadt de IMDB top 250 en sla de films op een een List
+     */
     private void loadImdbTop250() {
-
         filmInTop250.clear();
 
-
-        String url = "https://www.imdb.com/chart/top/?ref_=nv_mv_250";
-
         try {
-            // HTML van de URL ophalen
-            Document document = Jsoup.connect(url).get();
+            var document = Jsoup.connect(Config.IMDB_TOP_250_URL).get();
+            var elementsWithClass = document.select(Config.SUMMARY_ITEM_TAG);
 
-            Elements elementsWithClass = document.select(".ipc-metadata-list-summary-item__c");
-            System.out.println("konijnen");
-
-//            Film film = new Film("bananen");
-
-            Integer i = 1;
-            System.out.println(elementsWithClass.size());
             for (Element element : elementsWithClass) {
-
-                                films.add(generateFilm(element));
-
-        }} catch (IOException e) {
+                films.add(generateFilm(element));
+            }
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private Film generateFilm(Element element) {
+    /**
+     * Haal de titel, release jaar en duur van een film op uit een html element
+     * @param element Element
+     * @return Film
+     */
+    private Film generateFilm(final Element element) {
+        var title = element.select(Config.TITLE_TAG).text();
+        var releaseYear = Integer.parseInt(element.select(Config.METADATA_TAG).get(0).text());
+        var duration = element.select(Config.METADATA_TAG).get(1).text();
 
-        String title = element.select(".ipc-title__text").text();;
+        return new Film(
+                generateFilmTitle(title),
+                releaseYear,
+                generateDurationInMinutes(duration),
+                extractUrlFromHtml(element)
+        );
+    }
 
-//        Element metadata = element.select()
+    /**
+     * Laat alleen titel over.
+     * @param title String
+     * @return String bewerkte titel
+     */
+    private String generateFilmTitle(final String title) {
+        int index = title.indexOf(". ");
 
-        int releaseYear = Integer.parseInt(element.select(".sc-43986a27-7.dBkaPT.cli-title-metadata > span").get(0).text());
-        String duration = element.select(".sc-43986a27-7.dBkaPT.cli-title-metadata > span").get(1).text();
+        return title.substring(index + 2);
+    }
 
-        return new Film(title, releaseYear, duration);
+    /**
+     * Verander de duur van een film naar het aantal minuten
+     * @param duration String
+     * @return String durationInMinutes
+     */
+    private String generateDurationInMinutes(final String duration) {
+        int durationInMinutes = 0;
+
+        if (duration.matches("\\d+h \\d+m")) {
+            String[] parts = duration.split("[hm]");
+            var hours = Integer.parseInt(parts[0].trim());
+            var minutes = Integer.parseInt(parts[1].trim());
+
+            durationInMinutes = hours * 60 + minutes;
+        } else if (duration.matches("\\d+h")) {
+            var hours = Integer.parseInt(duration.replace("h","").trim() );
+            durationInMinutes = hours * 60;
+        } else {
+            log.error(INVALID_TIME_NOTATION + duration);
+        }
+
+        return durationInMinutes + "m";
+    }
+
+    /**
+     * Haal de url van de film op
+     * @param element element
+     * @return String url
+     */
+    private String extractUrlFromHtml(final Element element) {
+        var selectedElement = element.select(Config.URL_WRAPPER_TAG);
+        String url = selectedElement.attr("href");
+
+        return Config.IMDB_BASE_URL + url;
     }
 }

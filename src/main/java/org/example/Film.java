@@ -10,5 +10,5 @@ public class Film {
     private String title;
     private int releaseYear;
     private String duration;
-//    private String imdbURL;
+    private String imdbURL;
 }
