@@ -12,23 +12,28 @@ import java.io.StringBufferInputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ImdbController {
 
+    private List<Film> films;
     private Javalin app;
     private Imdb250Service service;
 
-    ImdbController(Javalin app){
+    ImdbController(final Javalin app, final List<Film> films){
         this.app = app;
         this.service = new Imdb250Service();
+        this.films = films;
 
-        app.get(Config.IMDB_TOP_250, this::showTop250);
+        app.get(Config.IMDB_TOP_250, ctx -> {
+            this.showTop250(ctx);
+        });
     }
 
     private void showTop250(final Context ctx) {
         try {
-            ctx.json(service.getFilms());
+            ctx.json(films);
         } catch (Exception e) {
             ctx.result("Er is iets mis gegaan");
         }

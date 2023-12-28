@@ -18,16 +18,14 @@ public class Imdb250Service {
     private List<Film> films;
 
     public Imdb250Service() {
-        filmInTop250 = new HashMap<>();
         films = new ArrayList<>();
-        loadImdbTop250();
     }
 
     /**
      * Laadt de IMDB top 250 en sla de films op een een List
      */
-    private void loadImdbTop250() {
-        filmInTop250.clear();
+    public List<Film> loadImdbTop250() {
+        List<Film> films = new ArrayList<>();
 
         try {
             var document = Jsoup.connect(Config.IMDB_TOP_250_URL).get();
@@ -39,6 +37,8 @@ public class Imdb250Service {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        return films;
     }
 
     /**
@@ -47,16 +47,39 @@ public class Imdb250Service {
      * @return Film
      */
     private Film generateFilm(final Element element) {
+        List<Film> films = new ArrayList<>();
+
         var title = element.select(Config.TITLE_TAG).text();
         var releaseYear = Integer.parseInt(element.select(Config.METADATA_TAG).get(0).text());
         var duration = element.select(Config.METADATA_TAG).get(1).text();
+        var url = extractUrlFromHtml(element);
+        var director = findDirectorUrl(url);
 
-        return new Film(
+        Film film = new Film(
                 generateFilmTitle(title),
                 releaseYear,
                 generateDurationInMinutes(duration),
-                extractUrlFromHtml(element)
+                url,
+                director
         );
+        System.out.println(film);
+        return film;
+    }
+
+    private String findDirectorUrl(final String url) {
+        String directorUrl= "banaan";
+
+
+        try {
+            var document = Jsoup.connect(url).get();
+//            var selectedElement = document.select(".ipc-metadata-list-item__list-content-item.ipc-metadata-list-item__list-content-item--link");
+            directorUrl = document.select(".ipc-metadata-list-item__list-content-item.ipc-metadata-list-item__list-content-item--link").get(0).text();
+
+//            directorUrl = selectedElement.attr("href");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return directorUrl;
     }
 
     /**
